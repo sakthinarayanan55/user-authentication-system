@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Inline User Authentication Demo - Premium Design</title>
+<style>
+  /* ====== GENERAL STYLES ====== */
+  body {
+    margin: 0;
+    height: 100vh;
+    font-family: "Poppins", sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    overflow: hidden;
+  }
+
+  /* ====== CONTAINER ====== */
+  .container {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2.5em;
+    width: 100%;
+    max-width: 420px;
+    border-radius: 20px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.3);
+    backdrop-filter: blur(12px);
+    transition: transform 0.4s ease, opacity 0.4s ease;
+    animation: fadeIn 1s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ====== TITLES ====== */
+  h2 {
+    text-align: center;
+    margin-bottom: 1.2em;
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
+
+  /* ====== INPUTS ====== */
+  input {
+    width: 100%;
+    padding: 0.8em;
+    margin: 0.7em 0;
+    border: none;
+    border-radius: 8px;
+    outline: none;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 1em;
+    transition: 0.3s;
+  }
+
+  input::placeholder {
+    color: rgba(255,255,255,0.7);
+  }
+
+  input:focus {
+    background: rgba(255,255,255,0.25);
+    box-shadow: 0 0 10px #a8c0ff;
+  }
+
+  /* ====== BUTTONS ====== */
+  button {
+    width: 100%;
+    padding: 0.8em;
+    margin-top: 0.8em;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    color: #fff;
+    font-weight: bold;
+    font-size: 1em;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,114,255,0.6);
+  }
+
+  #logout-btn {
+    background: linear-gradient(135deg, #ff416c, #ff4b2b);
+  }
+
+  /* ====== TOGGLE LINK ====== */
+  #toggle-link {
+    display: block;
+    margin-top: 1.2em;
+    text-align: center;
+    color: #fff;
+    font-size: 0.95em;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+
+  #toggle-link:hover {
+    color: #c0e0ff;
+  }
+
+  /* ====== MESSAGE ====== */
+  #message {
+    text-align: center;
+    margin-top: 0.8em;
+    font-weight: bold;
+  }
+
+  /* ====== DASHBOARD ====== */
+  #dashboard {
+    text-align: center;
+    animation: fadeIn 0.8s ease;
+  }
+
+  #dashboard h2 {
+    margin-bottom: 0.8em;
+    color: #fff;
+  }
+
+  /* ====== RESPONSIVE ====== */
+  @media (max-width: 480px) {
+    .container {
+      margin: 1em;
+      padding: 2em;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2 id="form-title">Register</h2>
+
+  <div id="auth-form">
+    <input type="text" id="username" placeholder="Username" autocomplete="off" />
+    <input type="password" id="password" placeholder="Password" autocomplete="off" />
+    <button id="submit-btn">Register</button>
+    <span id="toggle-link">Already have an account? Login here</span>
+    <p id="message"></p>
+  </div>
+
+  <div id="dashboard" style="display:none;">
+    <h2>Welcome, <span id="user-display"></span> 👋</h2>
+    <button id="logout-btn">Logout</button>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submit-btn');
+    const toggleLink = document.getElementById('toggle-link');
+    const formTitle = document.getElementById('form-title');
+    const message = document.getElementById('message');
+    const authForm = document.getElementById('auth-form');
+    const dashboard = document.getElementById('dashboard');
+    const userDisplay = document.getElementById('user-display');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    let isRegister = true;
+
+    function showMessage(msg, color = 'orange') {
+      message.style.color = color;
+      message.textContent = msg;
+    }
+
+    function saveUser(username, password) {
+      const users = JSON.parse(localStorage.getItem('users') || '{}');
+      users[username] = password;
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+
+    function getUserPassword(username) {
+      const users = JSON.parse(localStorage.getItem('users') || '{}');
+      return users[username];
+    }
+
+    function clearForm() {
+      usernameInput.value = '';
+      passwordInput.value = '';
+      showMessage('');
+    }
+
+    function showDashboard(username) {
+      authForm.style.display = 'none';
+      dashboard.style.display = 'block';
+      userDisplay.textContent = username;
+    }
+
+    function showAuthForm() {
+      authForm.style.display = 'block';
+      dashboard.style.display = 'none';
+      clearForm();
+    }
+
+    function simpleHash(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return hash.toString();
+    }
+
+    submitBtn.addEventListener('click', () => {
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!username || !password) {
+        showMessage('⚠️ Please fill in both fields.', '#ffd700');
+        return;
+      }
+
+      if (isRegister) {
+        if (getUserPassword(username)) {
+          showMessage('❌ Username already exists.', '#ff4b2b');
+        } else {
+          saveUser(username, simpleHash(password));
+          showMessage('✅ Registration successful! You can login now.', '#00ff99');
+          clearForm();
+          toggleForm();
+        }
+      } else {
+        const storedHash = getUserPassword(username);
+        if (!storedHash) {
+          showMessage('❌ User not found. Please register.', '#ff4b2b');
+        } else if (storedHash !== simpleHash(password)) {
+          showMessage('⚠️ Incorrect password.', '#ffd700');
+        } else {
+          showDashboard(username);
+        }
+      }
+    });
+
+    toggleLink.addEventListener('click', toggleForm);
+    logoutBtn.addEventListener('click', showAuthForm);
+
+    function toggleForm() {
+      isRegister = !isRegister;
+      if (isRegister) {
+        formTitle.textContent = 'Register';
+        submitBtn.textContent = 'Register';
+        toggleLink.textContent = 'Already have an account? Login here';
+      } else {
+        formTitle.textContent = 'Login';
+        submitBtn.textContent = 'Login';
+        toggleLink.textContent = "Don't have an account? Register here";
+      }
+      clearForm();
+    }
+  })();
+</script>
+
+</body>
+</html>
